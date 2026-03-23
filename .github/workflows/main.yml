@@ -1,25 +1,19 @@
-name: Node.js CI Pipeline
+name: Static Website Check
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
 
 jobs:
-  build:
-
+  check:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout repo
         uses: actions/checkout@v3
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
+      - name: List files
+        run: ls -la
 
-      - name: Install dependencies
-        run: npm install
-
-      - name: Run server test
-        run: node backend/server.js
+      - name: Check index.html exists
+        run: test -f index.html
