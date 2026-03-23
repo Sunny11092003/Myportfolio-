@@ -826,6 +826,7 @@
     .stat-row { gap: 1.2rem; }
     footer { flex-direction: column; gap: 0.8rem; text-align: center; }
   }
+  
 </style>
 </head>
 <body>
@@ -1108,110 +1109,201 @@
   <div>Bengaluru, India ✦ Open to work</div>
 </footer>
 
-<script>
-  // Custom cursor
-  const cursor = document.getElementById('cursor');
-  const ring = document.getElementById('cursorRing');
-  let mx = 0, my = 0, rx = 0, ry = 0;
-  document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; cursor.style.left = mx+'px'; cursor.style.top = my+'px'; });
-  (function animRing() {
-    rx += (mx - rx) * 0.12;
-    ry += (my - ry) * 0.12;
-    ring.style.left = rx+'px'; ring.style.top = ry+'px';
-    requestAnimationFrame(animRing);
-  })();
-  document.querySelectorAll('a,button,.project-card,.skill-pill').forEach(el => {
-    el.addEventListener('mouseenter', () => { cursor.style.width='20px'; cursor.style.height='20px'; ring.style.width='52px'; ring.style.height='52px'; });
-    el.addEventListener('mouseleave', () => { cursor.style.width='12px'; cursor.style.height='12px'; ring.style.width='36px'; ring.style.height='36px'; });
+<script type="module">
+
+// 🔥 Firebase imports
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getDatabase, ref, push, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDC9BXS0dVXUJwHeMQNKRbPnRvH-7qwULY",
+  authDomain: "portfolio-799ac.firebaseapp.com",
+  databaseURL: "https://portfolio-799ac-default-rtdb.firebaseio.com/",
+  projectId: "portfolio-799ac",
+  storageBucket: "portfolio-799ac.firebasestorage.app",
+  messagingSenderId: "852565732619",
+  appId: "1:852565732619:web:2bb05477bc5354f8abc60e",
+  measurementId: "G-XDZQV7SL0M"
+};
+
+// 🔥 Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+
+// Custom cursor
+const cursor = document.getElementById('cursor');
+const ring = document.getElementById('cursorRing');
+
+let mx = 0, my = 0, rx = 0, ry = 0;
+
+document.addEventListener('mousemove', e => {
+  mx = e.clientX;
+  my = e.clientY;
+  cursor.style.left = mx + 'px';
+  cursor.style.top = my + 'px';
+});
+
+(function animRing() {
+  rx += (mx - rx) * 0.12;
+  ry += (my - ry) * 0.12;
+  ring.style.left = rx + 'px';
+  ring.style.top = ry + 'px';
+  requestAnimationFrame(animRing);
+})();
+
+document.querySelectorAll('a,button,.project-card,.skill-pill').forEach(el => {
+  el.addEventListener('mouseenter', () => {
+    cursor.style.width = '20px';
+    cursor.style.height = '20px';
+    ring.style.width = '52px';
+    ring.style.height = '52px';
   });
+  el.addEventListener('mouseleave', () => {
+    cursor.style.width = '12px';
+    cursor.style.height = '12px';
+    ring.style.width = '36px';
+    ring.style.height = '36px';
+  });
+});
 
-  // Scroll reveal
-  const reveals = document.querySelectorAll('.reveal');
-  const obs = new IntersectionObserver((entries) => {
-    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); } });
-  }, { threshold: 0.12 });
-  reveals.forEach(r => obs.observe(r));
 
-  // ── Message Wall ─────────────────────────────────────────
-  const messages = [];
-  const avatarColors = ['#c8522b','#0e0e0e','#7c9e80','#d4a843','#5a4e7a'];
-  let colorIdx = 0;
+// Scroll reveal
+const reveals = document.querySelectorAll('.reveal');
 
-  function getInitials(name) {
-    return name.trim().split(' ').map(w => w[0].toUpperCase()).slice(0,2).join('');
-  }
-  function getStars(val) {
-    if (!val) return '';
-    const n = parseInt(val);
-    return '<span style="color:var(--gold)">' + '\u2605'.repeat(n) + '</span>' +
-           '<span style="opacity:0.25">' + '\u2605'.repeat(5-n) + '</span>';
-  }
-  function getTime() {
-    const now = new Date();
-    return now.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) +
-           ' \u00b7 ' + now.toLocaleDateString([],{month:'short',day:'numeric'});
-  }
-  function escHtml(str) {
-    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-  }
+const obs = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.classList.add('visible');
+    }
+  });
+}, { threshold: 0.12 });
 
-  function renderMessage(msg) {
-    const list = document.getElementById('messagesList');
-    const noMsg = document.getElementById('noMessages');
-    if (noMsg) noMsg.remove();
+reveals.forEach(r => obs.observe(r));
 
-    const color = avatarColors[colorIdx % avatarColors.length];
-    colorIdx++;
 
-    const card = document.createElement('div');
-    card.className = 'msg-card';
-    card.innerHTML =
-      '<div class="msg-header">' +
-        '<div class="msg-meta">' +
-          '<div class="msg-avatar" style="background:' + color + '">' + getInitials(msg.name) + '</div>' +
-          '<div>' +
-            '<div class="msg-name">' + escHtml(msg.name) + '</div>' +
-            (msg.type ? '<span class="msg-type">' + escHtml(msg.type) + '</span>' : '') +
-          '</div>' +
-        '</div>' +
-        '<div class="msg-right">' +
-          (msg.rating ? '<div class="msg-stars">' + getStars(msg.rating) + '</div>' : '') +
-          '<div class="msg-time">' + msg.time + '</div>' +
+// ── Message Wall ─────────────────────────────────────────
+const messages = []; // (kept as you asked)
+const avatarColors = ['#c8522b','#0e0e0e','#7c9e80','#d4a843','#5a4e7a'];
+let colorIdx = 0;
+
+function getInitials(name) {
+  return name.trim().split(' ').map(w => w[0].toUpperCase()).slice(0,2).join('');
+}
+
+function getStars(val) {
+  if (!val) return '';
+  const n = parseInt(val);
+  return '<span style="color:var(--gold)">' + '\u2605'.repeat(n) + '</span>' +
+         '<span style="opacity:0.25">' + '\u2605'.repeat(5-n) + '</span>';
+}
+
+function getTime() {
+  const now = new Date();
+  return now.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) +
+         ' \u00b7 ' + now.toLocaleDateString([], {month:'short',day:'numeric'});
+}
+
+function escHtml(str) {
+  return str.replace(/&/g,'&amp;')
+            .replace(/</g,'&lt;')
+            .replace(/>/g,'&gt;')
+            .replace(/"/g,'&quot;');
+}
+
+
+function renderMessage(msg) {
+  const list = document.getElementById('messagesList');
+  const noMsg = document.getElementById('noMessages');
+  if (noMsg) noMsg.remove();
+
+  const color = avatarColors[colorIdx % avatarColors.length];
+  colorIdx++;
+
+  const card = document.createElement('div');
+  card.className = 'msg-card';
+
+  card.innerHTML =
+    '<div class="msg-header">' +
+      '<div class="msg-meta">' +
+        '<div class="msg-avatar" style="background:' + color + '">' + getInitials(msg.name) + '</div>' +
+        '<div>' +
+          '<div class="msg-name">' + escHtml(msg.name) + '</div>' +
+          (msg.type ? '<span class="msg-type">' + escHtml(msg.type) + '</span>' : '') +
         '</div>' +
       '</div>' +
-      '<div class="msg-body">' + escHtml(msg.message) + '</div>';
+      '<div class="msg-right">' +
+        (msg.rating ? '<div class="msg-stars">' + getStars(msg.rating) + '</div>' : '') +
+        '<div class="msg-time">' + msg.time + '</div>' +
+      '</div>' +
+    '</div>' +
+    '<div class="msg-body">' + escHtml(msg.message) + '</div>';
 
-    list.insertBefore(card, list.firstChild);
+  list.insertBefore(card, list.firstChild);
 
-    const count = document.getElementById('msgCount');
-    count.textContent = messages.length;
-    count.style.transform = 'scale(1.5)';
-    setTimeout(function(){ count.style.transform = 'scale(1)'; }, 350);
+  // (kept your logic, but Firebase count will override later)
+  const count = document.getElementById('msgCount');
+  count.textContent = messages.length;
+  count.style.transform = 'scale(1.5)';
+  setTimeout(() => { count.style.transform = 'scale(1)'; }, 350);
+}
+
+
+// 🔥 Form submit → Firebase
+document.getElementById('feedbackForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+
+  const rating = document.querySelector('input[name="rating"]:checked');
+
+  const msg = {
+    name: document.getElementById('fname').value.trim(),
+    email: document.getElementById('femail').value.trim(),
+    type: document.getElementById('ftype').value,
+    rating: rating ? rating.value : '',
+    message: document.getElementById('fmsg').value.trim(),
+    time: new Date().toISOString()
+  };
+
+  push(ref(db, "messages/"), msg);
+
+  const toast = document.getElementById('successToast');
+  toast.classList.add('show');
+  this.reset();
+
+  setTimeout(() => toast.classList.remove('show'), 4000);
+});
+
+
+// 🔥 Real-time fetch
+const messagesRef = ref(db, "messages/");
+
+onValue(messagesRef, (snapshot) => {
+  const data = snapshot.val();
+
+  const list = document.getElementById('messagesList');
+  list.innerHTML = '';
+
+  if (!data) {
+    list.innerHTML = '<div class="no-messages">No messages yet — be the first ✦</div>';
+    return;
   }
 
-  // Form submit
-  document.getElementById('feedbackForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    const rating = document.querySelector('input[name="rating"]:checked');
-    const msg = {
-      name:    document.getElementById('fname').value.trim(),
-      type:    document.getElementById('ftype').value,
-      rating:  rating ? rating.value : '',
-      message: document.getElementById('fmsg').value.trim(),
-      time:    getTime()
-    };
-    messages.unshift(msg);
-    renderMessage(msg);
+  const entries = Object.values(data).reverse();
 
-    const toast = document.getElementById('successToast');
-    toast.classList.add('show');
-    this.reset();
-    setTimeout(function(){ toast.classList.remove('show'); }, 4000);
-
-    setTimeout(function(){
-      document.getElementById('messagesList').scrollIntoView({behavior:'smooth', block:'nearest'});
-    }, 250);
+  entries.forEach(msg => {
+    renderMessage({
+      name: msg.name,
+      type: msg.type,
+      rating: msg.rating,
+      message: msg.message,
+      time: new Date(msg.time).toLocaleString()
+    });
   });
+
+  // 🔥 Correct count from Firebase
+  document.getElementById('msgCount').textContent = entries.length;
+});
+
 </script>
 </body>
 </html>
